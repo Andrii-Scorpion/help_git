@@ -15,8 +15,10 @@ class Ship:
 		# Create every new ship down display, around centre
 		self.rect.midbottom = self.screen_rect.midbottom
 
+
 		# Save decimal value for position ship, by horizontal
 		self.x = float(self.rect.x)
+
 
 		self.moving_right = False
 		self.moving_left = False
@@ -27,6 +29,7 @@ class Ship:
 			self.x += self.settings.ship_speed
 		if self.moving_left and self.rect.left > 0:
 			self.x -= self.settings.ship_speed
+
 
 		# Update object rect with self.x
 		self.rect.x = self.x
