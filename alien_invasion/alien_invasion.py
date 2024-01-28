@@ -1,10 +1,12 @@
 import sys
 
-
+from time import sleep
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from game_stats import GameStats
+from button import Button
 # from scorpion import Scorpion
 import pygame
 
@@ -22,6 +24,9 @@ class AlienInvasion:
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
 
+        # Create exemplar for save game statistics
+        self.stats = GameStats(self)
+
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
@@ -32,16 +37,20 @@ class AlienInvasion:
         # Set color background
         self.bg_color = (230, 230, 230)
 
+        # Create button Play.
+        self.play_button = Button(self, "Play")
 
     def run_game(self):
         """Start general cycle game"""
         while True:
             self._check_events()
-            self.ship.update()
-            self._update_bullets()
-            self._update_aliens()
-            self._update_screen()
+            if self.stats.game_active:
+                self.ship.update()
+                self._update_bullets()
+                self._update_aliens()
 
+
+            self._update_screen()
 
     def _check_events(self):
         """React for click keyboard and mouse events"""
@@ -52,6 +61,30 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_events(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
+
+    def _check_play_button(self, mouse_pos):
+        """Start new game, when user press on the button Play"""
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if button_clicked and not self.stats.game_active:
+            # cancel games statistics
+            self.settings.initialize_dynamic_settings()
+            self.stats.reset_stats()
+            self.stats.game_active = True
+
+            # Remove excess aliens and bullet
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Create new fleet and centered ship
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # hide mouse cursor
+            pygame.mouse.set_visible(False)
+
 
 
     def _check_keydown_events(self, event):
@@ -98,6 +131,7 @@ class AlienInvasion:
             for alien_number in range(number_aliens_x):
                 self._create_alien(alien_number, row_number)
 
+
     def _create_alien(self, alien_number, row_number):
         """Create alien and stay on the row"""
         alien = Alien(self)
@@ -108,16 +142,34 @@ class AlienInvasion:
         alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
         self.aliens.add(alien)
 
+    def _check_fleet_edges(self):
+        """React according to what, if the aliens reached  edge of the screen"""
+        for alien in self.aliens.sprites():
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        """Start all fleet and change the fleet direction"""
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1
+
 
     def _update_screen(self):
         """Update the picture on screen and turn on new screen"""
         # Again printing display on every iteration
         self.screen.fill(self.settings.bg_color)
+
         self.ship.blitme()
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
         # self.scorpion.blitme()
+
+        # Draw button Play, if game inactive
+        if not self.stats.game_active:
+            self.play_button.draw_button()
 
         # Show last draw display
         pygame.display.flip()
@@ -130,9 +182,62 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
 
+        self._check_bullet_alien_collision()
+
     def _update_aliens(self):
-        """Update position of all aliens in the navy"""
+        """Check, if fleet edge of the screen, after update position all aliens from fleet"""
+        self._check_fleet_edges()
         self.aliens.update()
+
+        # find collision the bullet with aliens
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()
+
+    # Find, if some from alien down brink on the screen
+        self._check_aliens_bottom()
+
+
+    def _check_bullet_alien_collision(self):
+        """React on collision the bullet with aliens"""
+        # remove all bullet and aliens, if collision
+
+        """Check, if the bullet found its alien. If got hit, remove the bullet and the alien"""
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+
+        if not self.aliens:
+            """remove the bullet and create a new fleet"""
+            self.bullets.empty()
+            self._create_fleet()
+            self.settings.increase_speed()
+
+    def _ship_hit(self):
+        """React on collision the ship with aliens"""
+        # reduce ships_left.
+        if self.stats.ships_left > 0:
+            self.stats.ships_left -= 1
+
+        # release from excess aliens and bullet
+            self.aliens.empty()
+            self.bullets.empty()
+
+        # Create new fleet and centered ship
+            self._create_fleet()
+            self.ship.center_ship()
+
+        # Pause
+            sleep(0.5)
+        else:
+            self.stats.game_active = False
+            pygame.mouse.set_visible(True)
+
+    def _check_aliens_bottom(self):
+        """Check, if has not reached some alien down brink on the screen"""
+        screen_rect = self.screen.get_rect()
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= screen_rect.bottom:
+                """React, if possible ship was destroyed"""
+                self._ship_hit()
+                break
 
 if __name__ == "__main__":
     # Create instance game and run game
