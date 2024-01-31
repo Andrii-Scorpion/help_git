@@ -80,6 +80,7 @@ class AlienInvasion:
             self.stats.game_active = True
             self.sb.prep_score()
             self.sb.prep_level()
+            self.sb.prep_ships()
 
             # Remove excess aliens and bullet
             self.aliens.empty()
@@ -229,15 +230,16 @@ class AlienInvasion:
 
             # Increase level
             self.stats.level += 1
-            self.sb.prep_score()
+            self.sb.prep_level()
 
 
 
     def _ship_hit(self):
         """React on collision the ship with aliens"""
-        # reduce ships_left.
+        # reduce ships_left and update table.
         if self.stats.ships_left > 0:
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
         # release from excess aliens and bullet
             self.aliens.empty()
