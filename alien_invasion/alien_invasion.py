@@ -7,6 +7,7 @@ from bullet import Bullet
 from alien import Alien
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 # from scorpion import Scorpion
 import pygame
 
@@ -15,6 +16,7 @@ class AlienInvasion:
 
     def __init__(self):
         """Initialize the game, create resources game"""
+
         pygame.init()
         self.settings = Settings()
 
@@ -24,8 +26,9 @@ class AlienInvasion:
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
 
-        # Create exemplar for save game statistics
+        # Create exemplar for save game statistics and scoreboard
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -39,6 +42,8 @@ class AlienInvasion:
 
         # Create button Play.
         self.play_button = Button(self, "Play")
+
+
 
     def run_game(self):
         """Start general cycle game"""
@@ -73,6 +78,8 @@ class AlienInvasion:
             self.settings.initialize_dynamic_settings()
             self.stats.reset_stats()
             self.stats.game_active = True
+            self.sb.prep_score()
+            self.sb.prep_level()
 
             # Remove excess aliens and bullet
             self.aliens.empty()
@@ -167,6 +174,9 @@ class AlienInvasion:
         self.aliens.draw(self.screen)
         # self.scorpion.blitme()
 
+        # Draw information about score
+        self.sb.show_score()
+
         # Draw button Play, if game inactive
         if not self.stats.game_active:
             self.play_button.draw_button()
@@ -204,11 +214,24 @@ class AlienInvasion:
         """Check, if the bullet found its alien. If got hit, remove the bullet and the alien"""
         collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
 
+
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+        self.sb.prep_score()
+        self.sb.check_high_score()
+
         if not self.aliens:
             """remove the bullet and create a new fleet"""
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # Increase level
+            self.stats.level += 1
+            self.sb.prep_score()
+
+
 
     def _ship_hit(self):
         """React on collision the ship with aliens"""
@@ -238,6 +261,9 @@ class AlienInvasion:
                 """React, if possible ship was destroyed"""
                 self._ship_hit()
                 break
+
+
+
 
 if __name__ == "__main__":
     # Create instance game and run game
