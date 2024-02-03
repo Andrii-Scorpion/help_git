@@ -10,6 +10,7 @@ from button import Button
 from scoreboard import Scoreboard
 # from scorpion import Scorpion
 import pygame
+import pygame.mixer
 
 class AlienInvasion:
     """General class, which to manage resources and bahavior game"""
@@ -47,6 +48,9 @@ class AlienInvasion:
 
     def run_game(self):
         """Start general cycle game"""
+
+        sound = pygame.mixer.Sound("sound.wav")
+
         while True:
             self._check_events()
             if self.stats.game_active:
@@ -55,7 +59,9 @@ class AlienInvasion:
                 self._update_aliens()
 
 
+
             self._update_screen()
+            sound.play()
 
     def _check_events(self):
         """React for click keyboard and mouse events"""
@@ -81,6 +87,7 @@ class AlienInvasion:
             self.sb.prep_score()
             self.sb.prep_level()
             self.sb.prep_ships()
+
 
             # Remove excess aliens and bullet
             self.aliens.empty()

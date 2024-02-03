@@ -12,7 +12,10 @@ class GameStats:
 		self.game_active = False
 
 		# Record not canceled
+
+
 		self.high_score = 0
+
 
 
 	def reset_stats(self):
@@ -22,3 +25,5 @@ class GameStats:
 		self.score = 0
 
 		self.level = 1
+
+

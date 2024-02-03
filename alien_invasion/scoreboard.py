@@ -1,3 +1,5 @@
+import io
+
 import pygame.font
 from pygame.sprite import Group
 
@@ -8,6 +10,14 @@ class Scoreboard:
 
 	def __init__(self, ai_game):
 		"""Initialize attributes, connected with score"""
+
+		"""line from 14-19 created AI Bard on my request"""
+		self.high_score = 0
+
+		with io.open("my_record.txt", "r") as f:
+			record = f.read()
+		self.high_score = int(record)
+
 		self.ai_game = ai_game
 		self.screen = ai_game.screen
 		self.screen_rect = ai_game.screen.get_rect()
@@ -24,9 +34,11 @@ class Scoreboard:
 		self.prep_high_score()
 		self.prep_level()
 
+
+
 	def prep_score(self):
 		"""Prepare score on image"""
-		rounded_score = round(self.stats.score, -1)
+		rounded_score = round(self.stats.score)
 		score_str = "Score {:,}".format(rounded_score)
 		self.score_image = self.font.render(score_str, True, self.text_color, self.settings.bg_color)
 
@@ -45,21 +57,38 @@ class Scoreboard:
 
 	def prep_high_score(self):
 		"""Generate record in the image"""
-		high_score = round(self.stats.high_score, -1)
-		high_score_str = "Record {:,}".format(high_score)
+		"""line 63 I comment, because it don't need to"""
+		# self.high_score = round(self.stats.high_score, -1)
+		high_score_str = "{:,}".format(self.high_score)
 		self.high_score_image = self.font.render(high_score_str, True,
 		                        self.text_color, self.settings.bg_color)
+
+
+
+		"""This code I used to write the high score"""
+		# with open("my_record.txt", "w") as file:
+		# 	for record in high_score_str:
+		# 		file.write(record)
+
 
 		# Centered record around horizontal
 		self.high_score_rect = self.high_score_image.get_rect()
 		self.high_score_rect.centerx = self.screen_rect.centerx
 		self.high_score_rect.top = self.score_rect.top
 
+
 	def check_high_score(self):
-		"""Chech, if update new record"""
-		if self.stats.score > self.stats.high_score:
-			self.stats.high_score = self.stats.score
+		"""Check, if update new record"""
+		# if self.stats.score > self.stats.high_score:
+		# 	self.stats.high_score = self.stats.score
+		"""This code I used to write the high score, but helped me AI Bard"""
+		if self.stats.score > self.high_score:
+			self.high_score = self.stats.score
+			with open("my_record.txt", "w") as f:
+				f.write(str(self.high_score))
 			self.prep_high_score()
+
+
 
 	def prep_level(self):
 		"""Prepare level into image"""
